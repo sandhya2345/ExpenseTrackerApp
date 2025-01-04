@@ -1,0 +1,161 @@
+﻿@page "/transactions"
+@using m2.Models
+@inject m2.Services.UserService UserService
+
+<h1>User Transactions</h1>
+
+<!-- Display Total Transactions Info -->
+<div class="mb-4">
+    <p><strong>Total Transactions:</strong> @Data.Transactions.Count</p>
+    <p><strong>Net Balance (Inflows + Debts - Outflows):</strong> @(Data.Transactions.Sum(t => t.Credit) + Data.Debts.Sum(d => d.Amount) - Data.Transactions.Sum(t => t.Debit))</p>
+</div>
+
+<!-- Search Input -->
+<div class="form-group">
+    <label for="search">Search Transactions</label>
+    <InputText id="search" @bind-Value="searchQuery" class="form-control" placeholder="Search by description..." />
+</div>
+
+<!-- Sort Dropdown -->
+<div class="form-group">
+    <label for="sortOrder">Sort By</label>
+    <select id="sortOrder" @bind="sortOrder" class="form-control">
+        <option value="desc">Date (Descending)</option>
+        <option value="asc">Date (Ascending)</option>
+    </select>
+</div>
+
+<!-- Filter by Type -->
+<div class="form-group">
+    <label for="transactionType">Filter by Type</label>
+    <select id="transactionType" @bind="transactionType" class="form-control">
+        <option value="">All</option>
+        <option value="debit">Debit</option>
+        <option value="credit">Credit</option>
+    </select>
+</div>
+
+<!-- Filter by Tags -->
+<div class="form-group">
+    <label for="tagFilter">Filter by Tag</label>
+    <select id="tagFilter" @bind="selectedTag" class="form-control">
+        <option value="">All</option>
+        @foreach (var tag in uniqueTags)
+        {
+            <option value="@tag">@tag</option>
+        }
+    </select>
+</div>
+
+<!-- Filter by Date Range -->
+<div class="form-group">
+    <label for="startDate">Date</label>
+    <InputDate id="startDate" @bind-Value="startDate" class="form-control" />
+</div>
+
+<!-- Transaction Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>Main Balance</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Tags</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            decimal runningBalance = Data.Transactions.Sum(t => t.Credit) - Data.Transactions.Sum(t => t.Debit); // Initial balance
+        }
+        @foreach (var transaction in GetSortedAndFilteredTransactions())
+        {
+            // Update running balance for the current transaction
+            runningBalance += transaction.Credit - transaction.Debit;
+
+            <tr>
+                <td>@transaction.Id</td>
+                <td>
+                    @if (runningBalance < 0)
+                    {
+                        <span class="text-danger">Pending Debt</span>
+                    }
+                    else
+                    {
+                        @runningBalance
+                    }
+                </td>
+                <td>@Math.Max(0, transaction.Debit)</td>
+                <td>@Math.Max(0, transaction.Credit)</td>
+                <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
+                <td>@transaction.Description</td>
+                <td>
+                    @if (transaction.Tags != null && transaction.Tags.Any())
+                    {
+                        @foreach (var tag in transaction.Tags)
+                        {
+                            <span style="color: black; padding: 5px; border-radius: 5px;">
+                                @tag.Name
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span>No tags</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+@code {
+    private AppData Data;
+    private string searchQuery = string.Empty;
+    private string sortOrder = "desc";
+    private string transactionType = string.Empty; // Filter for transaction type
+    private string selectedTag = string.Empty; // Filter for tags
+    private DateTime? startDate = null; // Filter for start date
+    private DateTime? endDate = null; // Filter for end date
+    private List<string> uniqueTags = new(); // List of unique tags
+
+    protected override void OnInitialized()
+    {
+        Data = UserService.LoadData();
+        uniqueTags = Data.Transactions
+            .SelectMany(t => t.Tags ?? new List<Tag>())
+            .Select(tag => tag.Name)
+            .Distinct()
+            .ToList();
+    }
+
+    // Method to get transactions sorted and filtered
+    private IEnumerable<Transaction> GetSortedAndFilteredTransactions()
+    {
+        var filteredTransactions = Data.Transactions
+            .Where(t => string.IsNullOrEmpty(searchQuery) ||
+                        (!string.IsNullOrEmpty(t.Description) && t.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
+            .Where(t => string.IsNullOrEmpty(transactionType) ||
+                        (transactionType == "debit" && t.Debit > 0) ||
+                        (transactionType == "credit" && t.Credit > 0))
+            .Where(t => string.IsNullOrEmpty(selectedTag) ||
+                        (t.Tags != null && t.Tags.Any(tag => tag.Name == selectedTag)))
+            .Where(t => !startDate.HasValue || t.Date >= startDate)
+            .Where(t => !endDate.HasValue || t.Date <= endDate);
+
+        // Sorting logic
+        if (sortOrder == "asc")
+        {
+            return filteredTransactions.OrderBy(t => t.Date); // Ascending order
+        }
+        else
+        {
+            return filteredTransactions.OrderByDescending(t => t.Date); // Descending order
+        }
+    }
+
+}

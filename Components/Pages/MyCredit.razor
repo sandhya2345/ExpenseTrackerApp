@@ -1,0 +1,79 @@
+﻿@* @page "/credits" *@
+@* @using m2.Models *@
+@* @inject m2.Services.UserService UserService *@
+
+@* <h1>User Credits</h1> *@
+
+@* <table class="table"> *@
+@*     <thead> *@
+@*         <tr> *@
+@*             <th>Credit ID</th> *@
+@*             <th>Total Credit</th> *@
+@*             <th>Used Amount</th> *@
+@*             <th>Remaining Credit</th> *@
+@*             <th>Date</th> *@
+@*             <th>Description</th> *@
+@*         </tr> *@
+@*     </thead> *@
+@*     <tbody> *@
+@*         @foreach (var credit in Data.Credits) *@
+@*         { *@
+@*             <tr> *@
+@*                 <td>@credit.Id</td> *@
+@*                 <td>@credit.Amount</td> *@
+@*                 <td>@credit.UsedAmount</td> *@
+@*                 <td>@(Data.Credits.Sum(c => c.Amount) - Data.Credits.Sum(c => c.UsedAmount))</td> *@
+@*                 <td>@credit.Date.ToString("MM/dd/yyyy")</td> *@
+@*                 <td>@credit.Description</td> *@
+@*             </tr> *@
+@*         } *@
+@*     </tbody> *@
+@* </table> *@
+
+@* <h2>Add New Credit</h2> *@
+@* <EditForm Model="newCredit" OnValidSubmit="HandleCreditSubmit"> *@
+@*     <DataAnnotationsValidator /> *@
+@*     <ValidationSummary /> *@
+
+@*     <div class="form-group"> *@
+@*         <label for="amount">Credit Amount</label> *@
+@*         <InputNumber id="amount" @bind-Value="newCredit.Amount" class="form-control" /> *@
+@*     </div> *@
+
+@*     <div class="form-group"> *@
+@*         <label for="usedAmount">Used Amount</label> *@
+@*         <InputNumber id="usedAmount" @bind-Value="newCredit.UsedAmount" class="form-control" /> *@
+@*     </div> *@
+
+@*     <div class="form-group"> *@
+@*         <label for="description">Description</label> *@
+@*         <InputText id="description" @bind-Value="newCredit.Description" class="form-control" /> *@
+@*     </div> *@
+
+@*     <div class="form-group"> *@
+@*         <button type="submit" class="btn btn-primary">Add Credit</button> *@
+@*     </div> *@
+@* </EditForm> *@
+
+@* @code { *@
+@*     private AppData Data; *@
+@*     private Credit newCredit = new Credit(); *@
+
+@*     protected override void OnInitialized() *@
+@*     { *@
+@*         Data = UserService.LoadData(); *@
+@*     } *@
+
+@*     private void HandleCreditSubmit() *@
+@*     { *@
+@*         // Add the new credit to the data *@
+@*         if (Data.Credits == null) *@
+@*         { *@
+@*             Data.Credits = new List<Credit>(); *@
+@*         } *@
+
+@*         Data.Credits.Add(newCredit); *@
+@*         newCredit = new Credit(); // Reset the form after submission *@
+@*     } *@
+@* } *@
+

@@ -1,0 +1,62 @@
+﻿@page "/cash-inflows"
+@using m2.Models
+@inject m2.Services.UserService UserService
+
+<h1 class="text-center text-black mb-4">Cash Inflows</h1>
+
+<div class="container mt-3">
+    <!-- Total Credit Display -->
+    <div class="mb-3">
+        <h4>Total Credit Amount: <span class="text-success">@totalCreditAmount</span></h4>
+    </div>
+
+    <!-- Cash Inflows Table -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Credit Amount</th>
+                <th>Description</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (cashInflows.Any())
+            {
+                @foreach (var inflow in cashInflows)
+                {
+                    <tr>
+                        <td>@inflow.Id</td>
+                        <td>@inflow.Credit</td>
+                        <td>@inflow.Description</td>
+                        <td>@inflow.Date.ToString("g")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center">No cash inflows available.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Transaction> cashInflows = new List<Transaction>();
+    private AppData Data;
+    private decimal totalCreditAmount;
+
+    protected override void OnInitialized()
+    {
+        // Load data from the UserService
+        Data = UserService.LoadData();
+
+        // Filter cash inflows (Credit > 0)
+        cashInflows = Data.Transactions.Where(t => t.Credit > 0).ToList();
+
+        // Calculate the total credit amount
+        totalCreditAmount = cashInflows.Sum(t => t.Credit);
+    }
+}

@@ -1,0 +1,158 @@
+﻿@page "/"
+@using m2.Models
+@inject Services.UserService UserService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Dashboard</h1>
+    <h3 class="text-left mb-2">Welcome Sandhya Timalsena!</h3>
+
+    <!-- Dashboard Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h5 class="text-muted">Total Inflows</h5>
+                <h3 class="text-black">@Data.Transactions.Where(t => t.Credit > 0).Sum(t => t.Credit):C</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h5 class="text-muted">Total Outflows</h5>
+                <h3 class="text-black">@Data.Transactions.Where(t => t.Debit > 0).Sum(t => t.Debit):C</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h5 class="text-muted">Remaining Debts</h5>
+                <h3 class="text-black">@Data.Debts.Where(d => !d.IsCleared).Sum(d => d.Amount):C</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h5 class="text-muted">Cleared Debts</h5>
+                <h3 class="text-black">@Data.Debts.Where(d => d.IsCleared).Sum(d => d.Amount):C</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Highest and Lowest Transactions Table -->
+    <h2 class="text-center mb-4">Highest and Lowest Transactions</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Highest</th>
+                    <th>Lowest</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Cash Inflows</td>
+                    <td>@highestInflow.ToString("C")</td>
+                    <td>@lowestInflow.ToString("C")</td>
+                </tr>
+                <tr>
+                    <td>Cash Outflows</td>
+                    <td>@highestOutflow.ToString("C")</td>
+                    <td>@lowestOutflow.ToString("C")</td>
+                </tr>
+                <tr>
+                    <td>Debts</td>
+                    <td>@highestDebt.ToString("C")</td>
+                    <td>@lowestDebt.ToString("C")</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <h2 class="text-center mb-4">Recent Transactions</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Data.Transactions.Any())
+                {
+                    @foreach (var transaction in Data.Transactions.Take(3))
+                    {
+                        <tr>
+                            <td>@transaction.Id</td>
+                            <td>@transaction.Description</td>
+                            <td>@transaction.Debit.ToString("C")</td>
+                            <td>@transaction.Credit.ToString("C")</td>
+                            <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center">No transactions found</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Action Link to View All Transactions -->
+    <div class="text-center mt-4">
+        <a href="/transactions" class="btn btn-secondary">View All Transactions</a>
+    </div>
+</div>
+
+@code {
+    private AppData Data;
+    private decimal totalAmount;
+    private decimal cashInflows;
+    private decimal cashOutflows;
+    private decimal totalDebts;
+    private decimal highestInflow;
+    private decimal lowestInflow;
+    private decimal highestOutflow;
+    private decimal lowestOutflow;
+    private decimal highestDebt;
+    private decimal lowestDebt;
+
+    // Date filtering variables
+    private DateTime startDate = DateTime.Now.AddMonths(-1); // Default to last month
+    private DateTime endDate = DateTime.Now; // Default to today
+
+    protected override void OnInitialized()
+    {
+        Data = UserService.LoadData();
+        FilterByDate();  // Apply the default filter when initialized
+    }
+
+    // Method to filter data based on the selected date range
+    private void FilterByDate()
+    {
+        // Filter transactions based on date range
+        var filteredTransactions = Data.Transactions.Where(t => t.Date >= startDate && t.Date <= endDate).ToList();
+
+        // Recalculate metrics with the filtered data
+        totalAmount = filteredTransactions.Sum(t => t.Credit - t.Debit);
+        cashInflows = filteredTransactions.Sum(t => t.Credit);
+        cashOutflows = filteredTransactions.Sum(t => t.Debit);
+
+        // Filter debts if needed
+        var filteredDebts = Data.Debts.Where(d => d.Date >= startDate && d.Date <= endDate).ToList();
+        totalDebts = filteredDebts.Sum(d => d.Amount);
+
+        // Calculate highest and lowest for inflows, outflows, and debts
+        highestInflow = filteredTransactions.Where(t => t.Credit > 0).Max(t => t.Credit);
+        lowestInflow = filteredTransactions.Where(t => t.Credit > 0).Min(t => t.Credit);
+        highestOutflow = filteredTransactions.Where(t => t.Debit > 0).Max(t => t.Debit);
+        lowestOutflow = filteredTransactions.Where(t => t.Debit > 0).Min(t => t.Debit);
+        highestDebt = filteredDebts.Any() ? filteredDebts.Max(d => d.Amount) : 0;
+        lowestDebt = filteredDebts.Any() ? filteredDebts.Min(d => d.Amount) : 0;
+    }
+}

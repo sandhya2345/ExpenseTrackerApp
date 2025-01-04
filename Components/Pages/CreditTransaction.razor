@@ -1,0 +1,45 @@
+﻿@page "/credit-transaction"
+@using m2.Models
+@inject m2.Services.UserService UserService
+
+<h1 class="text-center text-black mb-4">Add Credit Transaction</h1>
+
+<div class="container mt-3">
+    <div class="form-group mb-3">
+        <label for="creditAmount" class="form-label">Credit Amount</label>
+        <InputNumber id="creditAmount" @bind-Value="newCreditTransaction.Credit" class="form-control" placeholder="Enter credit amount" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="description" class="form-label">Description</label>
+        <InputText id="description" @bind-Value="newCreditTransaction.Description" class="form-control" placeholder="Enter description" />
+    </div>
+
+    <button class="btn btn-primary btn-lg w-100 mt-3" style="background-color: #4a148c; border-color: #4a148c;" @onclick="HandleCreditTransactionSubmit">Add Credit</button>
+</div>
+
+@code {
+    private Transaction newCreditTransaction = new Transaction();
+    private AppData Data;
+
+    protected override void OnInitialized()
+    {
+        Data = UserService.LoadData();
+    }
+
+    private void HandleCreditTransactionSubmit()
+    {
+        // Add new credit transaction
+        newCreditTransaction.Id = Data.Transactions.Count + 1;
+        newCreditTransaction.Date = DateTime.Now;
+        newCreditTransaction.Debit = 0;
+
+        // Add the transaction to the data
+        Data.Transactions.Insert(0, newCreditTransaction);
+        UserService.SaveData(Data); // Save the updated data
+
+        // Reset form and force re-render
+        newCreditTransaction = new Transaction();
+        StateHasChanged();
+    }
+}

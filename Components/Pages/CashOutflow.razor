@@ -1,0 +1,59 @@
+﻿@page "/cash-outflows"
+@using m2.Models
+@inject m2.Services.UserService UserService
+
+<h1 class="text-center text-black mb-4">Cash Outflows</h1>
+
+<div class="container mt-3">
+    <!-- Total Debit Display -->
+    <div class="mb-3">
+        <h4>Total Debit Amount: <span class="text-danger">@totalDebitAmount</span></h4>
+    </div>
+
+    <!-- Cash Outflows Table -->
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in Data.Transactions.Where(t => t.Debit > 0))
+            {
+                    <tr>
+                        <td>@transaction.Id</td>
+                        <td>@transaction.Date.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@transaction.Debit</td>
+                        <td>@transaction.Description</td>
+                        <td>
+                        @if (transaction.Tags != null && transaction.Tags.Any())
+                        {
+                            @string.Join(", ", transaction.Tags.Select(tag => tag.Name))
+                        }
+                        else
+                        {
+                                    <em>No Tags</em>
+                        }
+                        </td>
+                    </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private AppData Data;
+    private decimal totalDebitAmount;
+
+    protected override void OnInitialized()
+    {
+        Data = UserService.LoadData();
+
+        // Calculate the total debit amount (sum of all Debit values)
+        totalDebitAmount = Data.Transactions.Where(t => t.Debit > 0).Sum(t => t.Debit);
+    }
+}
