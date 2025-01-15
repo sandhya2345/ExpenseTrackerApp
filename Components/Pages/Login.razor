@@ -1,0 +1,58 @@
+﻿@page "/login"
+@using m2.Models
+@inject Services.UserService UserService
+@inject NavigationManager NavigationManager
+
+<div class="d-flex justify-content-center align-items-center" style="height: 100vh; background-color: #4a148c;">
+    <div class="card p-4 shadow" style="width: 400px;  background-color: white;">
+        <h3 class="text-center mb-4" style="font-weight: bold;">ExpenseTracker(m2)</h3>
+        <div>
+            <label for="username" class="form-label">Username:</label>
+            <input id="username" @bind="LoginUsername" placeholder="Enter your username" class="form-control mb-3" />
+
+            <label for="password" class="form-label">Password:</label>
+            <input id="password" @bind="LoginPassword" placeholder="Enter your password" type="password" class="form-control mb-3" />
+
+            <button @onclick="LoginPage" class="btn btn-primary w-100" style="background-color: #4a148c; border: none;">Login</button>
+
+            <div class="text-center mt-3">
+                <span>Don’t have an account? </span><a href="/register" class="text-decoration-none" style="color: #131E5E;">Register here</a>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Message))
+        {
+                <p class="text-danger text-center mt-3">@Message</p>
+        }
+    </div>
+</div>
+
+@code {
+    private string LoginUsername = string.Empty;
+    private string LoginPassword = string.Empty;
+    private string Message = string.Empty;
+
+    private void LoginPage()
+    {
+        // If user is already authenticated, skip the login page
+        if (UserService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/"); // Redirect to home if already logged in
+            return;
+        }
+
+        // Check if the user exists and validate password
+        var isLoggedIn = UserService.Login(LoginUsername, LoginPassword);
+
+        if (isLoggedIn)
+        {
+            // Redirect to the home page if login is successful
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            // Display error message for invalid credentials
+            Message = "Invalid username or password.";
+        }
+    }
+}

@@ -3,43 +3,66 @@
 @inject Services.UserService UserService
 @inject NavigationManager NavigationManager
 
-<div class="container mt-4">
-    <h1 class="text-center mb-4">Dashboard</h1>
-    <h3 class="text-left mb-2">Welcome Sandhya Timalsena!</h3>
+<div class="container mt-2">
+    <h1 class="text-center mb-5 text-black">Dashboard</h1>
+    <h3 class="mb-4">Welcome, <span class="text-black">Sandhya Timalsena</span>!</h3>
 
     <!-- Dashboard Summary -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center p-3">
-                <h5 class="text-muted">Total Inflows</h5>
-                <h3 class="text-black">@Data.Transactions.Where(t => t.Credit > 0).Sum(t => t.Credit):C</h3>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
+                <div class="card-body">
+                    <h5>Total Inflows</h5>
+                    <h3>@cashInflows:$</h3>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center p-3">
-                <h5 class="text-muted">Total Outflows</h5>
-                <h3 class="text-black">@Data.Transactions.Where(t => t.Debit > 0).Sum(t => t.Debit):C</h3>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
+                <div class="card-body">
+                    <h5>Total Outflows</h5>
+                    <h3>@cashOutflows:$</h3>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center p-3">
-                <h5 class="text-muted">Remaining Debts</h5>
-                <h3 class="text-black">@Data.Debts.Where(d => !d.IsCleared).Sum(d => d.Amount):C</h3>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
+                <div class="card-body">
+                    <h5>Remaining Debts</h5>
+                    <h3>@totalDebts:$</h3>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center p-3">
-                <h5 class="text-muted">Cleared Debts</h5>
-                <h3 class="text-black">@Data.Debts.Where(d => d.IsCleared).Sum(d => d.Amount):C</h3>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
+                <div class="card-body">
+                    <h5>Cleared Debts</h5>
+                    <h3>@Data.Debts.Where(d => d.IsCleared).Sum(d => d.Amount):$</h3>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Filter by Date -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" class="form-control" @bind="startDate" />
+        </div>
+        <div class="col-md-6">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" class="form-control" @bind="endDate" />
+        </div>
+    </div>
+    <div class="text-end mb-4">
+        <button class="btn btn-primary" style="background-color: #4a148c; border: none;" @onclick="FilterByDate">Filter</button>
+    </div>
+
     <!-- Highest and Lowest Transactions Table -->
-    <h2 class="text-center mb-4">Highest and Lowest Transactions</h2>
-    <div class="table-responsive">
-        <table class="table table-bordered">
-            <thead>
+    <h2 class="mb-4 text-black">Highest and Lowest Transactions</h2>
+    <div class="table-responsive mb-5">
+        <table class="table table-striped">
+            <thead class="text-light" style="background-color: #4a148c;">
                 <tr>
                     <th>Category</th>
                     <th>Highest</th>
@@ -49,28 +72,28 @@
             <tbody>
                 <tr>
                     <td>Cash Inflows</td>
-                    <td>@highestInflow.ToString("C")</td>
-                    <td>@lowestInflow.ToString("C")</td>
+                    <td>@highestInflow:$</td>
+                    <td>@lowestInflow:$</td>
                 </tr>
                 <tr>
                     <td>Cash Outflows</td>
-                    <td>@highestOutflow.ToString("C")</td>
-                    <td>@lowestOutflow.ToString("C")</td>
+                    <td>@highestOutflow:$</td>
+                    <td>@lowestOutflow:$</td>
                 </tr>
                 <tr>
                     <td>Debts</td>
-                    <td>@highestDebt.ToString("C")</td>
-                    <td>@lowestDebt.ToString("C")</td>
+                    <td>@highestDebt:$</td>
+                    <td>@lowestDebt:$</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
     <!-- Recent Transactions Table -->
-    <h2 class="text-center mb-4">Recent Transactions</h2>
+    <h2 class="mb-4 text-black">Recent Transactions</h2>
     <div class="table-responsive">
         <table class="table table-bordered">
-            <thead>
+            <thead class="text-light" style="background-color: #4a148c;">
                 <tr>
                     <th>ID</th>
                     <th>Description</th>
@@ -87,8 +110,8 @@
                         <tr>
                             <td>@transaction.Id</td>
                             <td>@transaction.Description</td>
-                            <td>@transaction.Debit.ToString("C")</td>
-                            <td>@transaction.Credit.ToString("C")</td>
+                            <td>@transaction.Debit:$</td>
+                            <td>@transaction.Credit:$</td>
                             <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
                         </tr>
                     }
@@ -103,9 +126,33 @@
         </table>
     </div>
 
-    <!-- Action Link to View All Transactions -->
+    <!-- Pending Debts -->
+    <h2 class="mt-5 mb-4 text-black">Pending Debts</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="text-light" style="background-color: #4a148c;">
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var debt in Data.Debts.Where(d => !d.IsCleared))
+                {
+                    <tr>
+                        <td>@debt.Description</td>
+                        <td>@debt.Amount:$</td>
+                        <td>@debt.Date.ToString("MM/dd/yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- View All Transactions -->
     <div class="text-center mt-4">
-        <a href="/transactions" class="btn btn-secondary">View All Transactions</a>
+        <a href="/transactions" class="btn btn-secondary" style="background-color: #4a148c; color: #fff; border: none;">View All Transactions</a>
     </div>
 </div>
 
@@ -122,36 +169,31 @@
     private decimal highestDebt;
     private decimal lowestDebt;
 
-    // Date filtering variables
     private DateTime startDate = DateTime.Now.AddMonths(-1); // Default to last month
     private DateTime endDate = DateTime.Now; // Default to today
 
     protected override void OnInitialized()
     {
         Data = UserService.LoadData();
-        FilterByDate();  // Apply the default filter when initialized
+        FilterByDate(); // Apply the default filter
     }
 
-    // Method to filter data based on the selected date range
     private void FilterByDate()
     {
-        // Filter transactions based on date range
         var filteredTransactions = Data.Transactions.Where(t => t.Date >= startDate && t.Date <= endDate).ToList();
 
-        // Recalculate metrics with the filtered data
-        totalAmount = filteredTransactions.Sum(t => t.Credit - t.Debit);
         cashInflows = filteredTransactions.Sum(t => t.Credit);
         cashOutflows = filteredTransactions.Sum(t => t.Debit);
 
-        // Filter debts if needed
-        var filteredDebts = Data.Debts.Where(d => d.Date >= startDate && d.Date <= endDate).ToList();
+        var filteredDebts = Data.Debts?.Where(d => d.Date >= startDate && d.Date <= endDate).ToList() ?? new List<Debt>();
+
         totalDebts = filteredDebts.Sum(d => d.Amount);
 
-        // Calculate highest and lowest for inflows, outflows, and debts
-        highestInflow = filteredTransactions.Where(t => t.Credit > 0).Max(t => t.Credit);
-        lowestInflow = filteredTransactions.Where(t => t.Credit > 0).Min(t => t.Credit);
-        highestOutflow = filteredTransactions.Where(t => t.Debit > 0).Max(t => t.Debit);
-        lowestOutflow = filteredTransactions.Where(t => t.Debit > 0).Min(t => t.Debit);
+        highestInflow = filteredTransactions.Where(t => t.Credit > 0).DefaultIfEmpty().Max(t => t.Credit);
+        lowestInflow = filteredTransactions.Where(t => t.Credit > 0).DefaultIfEmpty().Min(t => t.Credit);
+        highestOutflow = filteredTransactions.Where(t => t.Debit > 0).DefaultIfEmpty().Max(t => t.Debit);
+        lowestOutflow = filteredTransactions.Where(t => t.Debit > 0).DefaultIfEmpty().Min(t => t.Debit);
+
         highestDebt = filteredDebts.Any() ? filteredDebts.Max(d => d.Amount) : 0;
         lowestDebt = filteredDebts.Any() ? filteredDebts.Min(d => d.Amount) : 0;
     }

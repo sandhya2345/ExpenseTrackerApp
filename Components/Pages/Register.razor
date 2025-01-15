@@ -3,60 +3,97 @@
 @inject m2.Services.UserService UserService
 @inject NavigationManager NavigationManager
 
-<h3>Register</h3>
 
-<div>
-    <input @bind="RegisterUsername" placeholder="Username" />
-    <input @bind="RegisterPassword" placeholder="Password" type="password" />
-    <input @bind="RegisterEmail" placeholder="Email" />
-    <button @onclick="RegisterPage">Register</button>
+<div class="d-flex justify-content-center align-items-center" style="height: 100vh; background-color: #4a148c;">
+    <div class="card shadow" style="width: 100%; max-width: 450px; border-color: #4a148c;">
+        <h3 class="text-center mt-8" style="color: #4a148c;">Register</h3>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <label for="username" class="form-label" style="color: #4a148c;">Username</label>
+                <input id="username" class="form-control" @bind="RegisterUsername" placeholder="Enter your username" />
+            </div>
+            <div class="form-group mb-3">
+                <label for="password" class="form-label" style="color: #4a148c;">Password</label>
+                <input id="password" class="form-control" @bind="RegisterPassword" placeholder="Enter your password" type="password" />
+            </div>
+            <div class="form-group mb-3">
+                <label for="email" class="form-label" style="color: #4a148c;">Email</label>
+                <input id="email" class="form-control" @bind="RegisterEmail" placeholder="Enter your email" type="email" />
+            </div>
+            <div class="form-group mb-4">
+                <label for="currency" class="form-label" style="color: #4a148c;">Preferred Currency</label>
+                <select id="currency" class="form-select" @bind="PreferredCurrency">
+                    <option value="NPR">Nepali Rupees (NPR)</option>
+                    <option value="USD">US Dollars (USD)</option>
+                </select>
+            </div>
+            <div class="d-grid">
+                <button class="btn text-white" style="background-color: #4a148c;" @onclick="RegisterPage">Register</button>
+            </div>
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                    <div class="alert mt-4" style="background-color: #4a148c; color: white;">
+                        <p class="mb-0">@Message</p>
+                    </div>
+            }
+        </div>
+    </div>
 </div>
-
-@if (!string.IsNullOrEmpty(Message))
-{
-    <p>@Message</p>
-}
 
 @code {
     private string RegisterUsername = "";
     private string RegisterPassword = "";
     private string RegisterEmail = "";
+    private string PreferredCurrency = "NPR"; // Default to Nepali Rupees
     private string Message = "";
 
     private List<User> Users = new();
 
     protected override void OnInitialized()
     {
+        // Load existing users from the UserService (appdata.json)
         Users = UserService.LoadUsers();
     }
 
-    private void RegisterPage()
+    private async Task RegisterPage()
     {
+        // Check if username or password is empty
         if (string.IsNullOrWhiteSpace(RegisterUsername) || string.IsNullOrWhiteSpace(RegisterPassword))
         {
             Message = "Username and password are required.";
             return;
         }
 
+        // Check if the username already exists
         if (Users.Any(u => u.Username == RegisterUsername))
         {
             Message = "Username already exists.";
             return;
         }
 
-        // Create new user and hash the password
+        // Assign a unique ID (incremental approach)
         var newUser = new User
             {
+                Id = Users.Count > 0 ? Users.Max(u => u.Id) + 1 : 1,  // Assign a unique ID
                 Username = RegisterUsername,
                 Password = UserService.HashPassword(RegisterPassword),  // Hash the password
-                Email = RegisterEmail
+                Email = RegisterEmail,
+                PreferredCurrency = PreferredCurrency // Save preferred currency
             };
 
+        // Add the new user to the list
         Users.Add(newUser);
+
+        // Save the updated user list to appdata.json
         UserService.SaveUsers(Users);
 
-        Message = "Registration successful. Redirecting to login...";
-        Task.Delay(2000).ContinueWith(_ => NavigationManager.NavigateTo("/"));
+        // Show success message
+        Message = "Registration successful. Redirecting to homepage...";
+
+        // Wait for 2 seconds before redirecting to homepage
+        await Task.Delay(2000);
+
+        // Redirect to homepage
+        NavigationManager.NavigateTo("/login");
     }
 }
-

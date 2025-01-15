@@ -1,6 +1,26 @@
 ﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        @if (UserService.IsAuthenticated)
+        {
+                <!-- Authenticated users see MainLayout -->
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        }
+        else
+        {
+                <!-- Unauthenticated users see FirstLayout -->
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.FirstLayout)" />
+            @if (!routeData.PageType.FullName.Contains("Login") && !routeData.PageType.FullName.Contains("Register"))
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+        }
     </Found>
+    <NotFound>
+        <p>Sorry, there's nothing at this address.</p>
+    </NotFound>
 </Router>
+
+@code {
+    [Inject] private Services.UserService UserService { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+}

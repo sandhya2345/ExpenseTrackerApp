@@ -12,6 +12,32 @@ namespace m2.Services
         private static readonly string FolderPath = Path.Combine(DesktopPath, "LocalDB");
         private static readonly string FilePath = Path.Combine(FolderPath, "appdata.json");
 
+        private User? _currentUser; // Store the logged-in user in memory
+
+        // Check if the user is authenticated
+        public bool IsAuthenticated => _currentUser != null;
+
+        // Attempt to log in a user
+        public bool Login(string username, string password)
+        {
+            var users = LoadUsers();
+            var user = users.FirstOrDefault(u => u.Username == username);
+
+            if (user != null && ValidatePassword(password, user.Password))
+            {
+                _currentUser = user;
+                return true;
+            }
+
+            return false;
+        }
+
+        // Log out the current user
+        public void Logout()
+        {
+            _currentUser = null;
+        }
+
         // Load AppData (Users, Transactions, Debts) from JSON file
         public AppData LoadData()
         {
@@ -59,6 +85,7 @@ namespace m2.Services
             return appData.Users;
         }
 
+        // Save Users to the AppData
         public void SaveUsers(List<User> users)
         {
             // Load the current AppData
@@ -67,6 +94,36 @@ namespace m2.Services
             appData.Users = users;
             // Save the updated AppData back to the file
             SaveData(appData);
+        }
+
+        // Register a new user
+        public bool Register(string username, string password, string email)
+        {
+            var users = LoadUsers();
+
+            // Check if the username already exists
+            if (users.Any(u => u.Username == username))
+            {
+                return false; // Username already exists
+            }
+
+            // Hash the password before saving
+            var hashedPassword = HashPassword(password);
+
+            // Create the new user and add it to the list
+            var newUser = new User
+            {
+                Username = username,
+                Password = hashedPassword,
+                Email = email
+            };
+
+            users.Add(newUser);
+
+            // Save the updated list of users
+            SaveUsers(users);
+
+            return true; // Registration successful
         }
 
         // Hash a password securely
@@ -95,4 +152,3 @@ namespace m2.Services
         }
     }
 }
-
