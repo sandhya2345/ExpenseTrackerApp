@@ -1,19 +1,46 @@
 ﻿@page "/"
 @using m2.Models
 @inject Services.UserService UserService
+@inject Services.CurrencyService CurrencyService
 @inject NavigationManager NavigationManager
+@using System.Globalization
 
 <div class="container mt-2">
     <h1 class="text-center mb-5 text-black">Dashboard</h1>
     <h3 class="mb-4">Welcome, <span class="text-black">Sandhya Timalsena</span>!</h3>
 
-    <!-- Dashboard Summary -->
+    <!-- Currency Selection -->
+    <div class="mb-4">
+        <label for="currencySelect" class="form-label">Select Currency</label>
+        <select id="currencySelect" class="form-control" @bind="PreferredCurrency">
+            <option value="USD">USD</option>
+            <option value="NPR">NPR</option>
+        </select>
+    </div>
+
+    <!-- Date Range Selection -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-4">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" class="form-control" @bind="startDate" />
+        </div>
+        <div class="col-md-4">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" class="form-control" @bind="endDate" />
+        </div>
+        <div class="col-md-4 text-center mt-4">
+            <button class="btn" @onclick="FilterByDate" style="background-color: #4a148c; color: white;">Filter</button>
+        </div>
+    </div>
+
+
+
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
             <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
                 <div class="card-body">
                     <h5>Total Inflows</h5>
-                    <h3>@cashInflows:$</h3>
+                    <h3>@(cashInflows.ToString("C", new CultureInfo(PreferredCurrency == "USD" ? "en-US" : "ne-NP")))</h3>
                 </div>
             </div>
         </div>
@@ -21,7 +48,7 @@
             <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
                 <div class="card-body">
                     <h5>Total Outflows</h5>
-                    <h3>@cashOutflows:$</h3>
+                    <h3>@(cashOutflows.ToString("C", new CultureInfo(PreferredCurrency == "USD" ? "en-US" : "ne-NP")))</h3>
                 </div>
             </div>
         </div>
@@ -29,7 +56,7 @@
             <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
                 <div class="card-body">
                     <h5>Remaining Debts</h5>
-                    <h3>@totalDebts:$</h3>
+                    <h3>@(totalDebts.ToString("C", new CultureInfo(PreferredCurrency == "USD" ? "en-US" : "ne-NP")))</h3>
                 </div>
             </div>
         </div>
@@ -37,93 +64,64 @@
             <div class="card text-center shadow border-0" style="background-color: #4a148c; color: #fff;">
                 <div class="card-body">
                     <h5>Cleared Debts</h5>
-                    <h3>@Data.Debts.Where(d => d.IsCleared).Sum(d => d.Amount):$</h3>
+                    <h3>@(clearedDebts.ToString("C", new CultureInfo(PreferredCurrency == "USD" ? "en-US" : "ne-NP")))</h3>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filter by Date -->
-    <div class="row mb-4">
+    <div class="row">
+        <!-- Highest Transactions -->
         <div class="col-md-6">
-            <label for="startDate" class="form-label">Start Date</label>
-            <input type="date" id="startDate" class="form-control" @bind="startDate" />
-        </div>
-        <div class="col-md-6">
-            <label for="endDate" class="form-label">End Date</label>
-            <input type="date" id="endDate" class="form-control" @bind="endDate" />
-        </div>
-    </div>
-    <div class="text-end mb-4">
-        <button class="btn btn-primary" style="background-color: #4a148c; border: none;" @onclick="FilterByDate">Filter</button>
-    </div>
-
-    <!-- Highest and Lowest Transactions Table -->
-    <h2 class="mb-4 text-black">Highest and Lowest Transactions</h2>
-    <div class="table-responsive mb-5">
-        <table class="table table-striped">
-            <thead class="text-light" style="background-color: #4a148c;">
-                <tr>
-                    <th>Category</th>
-                    <th>Highest</th>
-                    <th>Lowest</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Cash Inflows</td>
-                    <td>@highestInflow:$</td>
-                    <td>@lowestInflow:$</td>
-                </tr>
-                <tr>
-                    <td>Cash Outflows</td>
-                    <td>@highestOutflow:$</td>
-                    <td>@lowestOutflow:$</td>
-                </tr>
-                <tr>
-                    <td>Debts</td>
-                    <td>@highestDebt:$</td>
-                    <td>@lowestDebt:$</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Recent Transactions Table -->
-    <h2 class="mb-4 text-black">Recent Transactions</h2>
-    <div class="table-responsive">
-        <table class="table table-bordered">
-            <thead class="text-light" style="background-color: #4a148c;">
-                <tr>
-                    <th>ID</th>
-                    <th>Description</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Data.Transactions.Any())
-                {
-                    @foreach (var transaction in Data.Transactions.Take(3))
-                    {
+            <h4 class="text-black text-center">Highest Transactions</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="text-light" style="background-color: #4a148c;">
                         <tr>
-                            <td>@transaction.Id</td>
-                            <td>@transaction.Description</td>
-                            <td>@transaction.Debit:$</td>
-                            <td>@transaction.Credit:$</td>
-                            <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
+                            <th>SN</th>
+                            <th>Amount (@PreferredCurrency)</th>
+                            <th>Type</th>
                         </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="5" class="text-center">No transactions found</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in highestTransactions)
+                        {
+                            <tr>
+                                <td>@transaction.Id</td>
+                                <td>@(transaction.Credit > 0 ? transaction.Credit : transaction.Debit):@PreferredCurrency</td>
+                                <td>@(transaction.Credit > 0 ? "Credit" : "Debit")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Lowest Transactions -->
+        <div class="col-md-6">
+            <h4 class="text-black text-center">Lowest Transactions</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="text-light" style="background-color: #4a148c;">
+                        <tr>
+                            <th>SN</th>
+                            <th>Amount (@PreferredCurrency)</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in lowestTransactions)
+                        {
+                            <tr>
+                                <td>@transaction.Id</td>
+                                <td>@(transaction.Credit > 0 ? transaction.Credit : transaction.Debit):@PreferredCurrency</td>
+                                <td>@(transaction.Credit > 0 ? "Credit" : "Debit")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Pending Debts -->
@@ -138,11 +136,11 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var debt in Data.Debts.Where(d => !d.IsCleared))
+                @foreach (var debt in filteredDebts)
                 {
                     <tr>
                         <td>@debt.Description</td>
-                        <td>@debt.Amount:$</td>
+                        <td>@(debt.Amount * conversionRate):@PreferredCurrency</td>
                         <td>@debt.Date.ToString("MM/dd/yyyy")</td>
                     </tr>
                 }
@@ -158,43 +156,73 @@
 
 @code {
     private AppData Data;
-    private decimal totalAmount;
     private decimal cashInflows;
     private decimal cashOutflows;
     private decimal totalDebts;
-    private decimal highestInflow;
-    private decimal lowestInflow;
-    private decimal highestOutflow;
-    private decimal lowestOutflow;
-    private decimal highestDebt;
-    private decimal lowestDebt;
-
+    private decimal clearedDebts;
+    private List<Transaction> highestTransactions = new();
+    private List<Transaction> lowestTransactions = new();
+    private List<Debt> filteredDebts = new();
+    private string PreferredCurrency = "USD"; // Default currency
     private DateTime startDate = DateTime.Now.AddMonths(-1); // Default to last month
     private DateTime endDate = DateTime.Now; // Default to today
 
-    protected override void OnInitialized()
+    private decimal conversionRate = 1m; // Default to 1 for USD
+
+    protected override async Task OnInitializedAsync()
     {
-        Data = UserService.LoadData();
-        FilterByDate(); // Apply the default filter
+        if (Data == null)
+        {
+            Data = UserService.LoadData();
+
+            if (string.IsNullOrEmpty(PreferredCurrency))
+            {
+                PreferredCurrency = Data.PreferredCurrency;
+            }
+
+            await FilterByDate();
+        }
     }
 
-    private void FilterByDate()
+    private async Task FilterByDate()
     {
-        var filteredTransactions = Data.Transactions.Where(t => t.Date >= startDate && t.Date <= endDate).ToList();
+        conversionRate = await CurrencyService.GetExchangeRateAsync("USD", PreferredCurrency);
 
-        cashInflows = filteredTransactions.Sum(t => t.Credit);
-        cashOutflows = filteredTransactions.Sum(t => t.Debit);
 
-        var filteredDebts = Data.Debts?.Where(d => d.Date >= startDate && d.Date <= endDate).ToList() ?? new List<Debt>();
+        var filteredTransactions = Data.Transactions
+            .Where(t => t.Date >= startDate && t.Date <= endDate)
+            .ToList();
 
-        totalDebts = filteredDebts.Sum(d => d.Amount);
+        highestTransactions = filteredTransactions
+            .OrderByDescending(t => (t.Credit - t.Debit) * conversionRate)
+            .Take(5)
+            .Select(t => new Transaction
+                {
+                    Id = t.Id,
+                    Credit = t.Credit * conversionRate,
+                    Debit = t.Debit * conversionRate
+                })
+            .ToList();
 
-        highestInflow = filteredTransactions.Where(t => t.Credit > 0).DefaultIfEmpty().Max(t => t.Credit);
-        lowestInflow = filteredTransactions.Where(t => t.Credit > 0).DefaultIfEmpty().Min(t => t.Credit);
-        highestOutflow = filteredTransactions.Where(t => t.Debit > 0).DefaultIfEmpty().Max(t => t.Debit);
-        lowestOutflow = filteredTransactions.Where(t => t.Debit > 0).DefaultIfEmpty().Min(t => t.Debit);
+        lowestTransactions = filteredTransactions
+            .OrderBy(t => (t.Credit - t.Debit) * conversionRate)
+            .Take(5)
+            .Select(t => new Transaction
+                {
+                    Id = t.Id,
+                    Credit = t.Credit * conversionRate,
+                    Debit = t.Debit * conversionRate
+                })
+            .ToList();
 
-        highestDebt = filteredDebts.Any() ? filteredDebts.Max(d => d.Amount) : 0;
-        lowestDebt = filteredDebts.Any() ? filteredDebts.Min(d => d.Amount) : 0;
+        cashInflows = filteredTransactions.Sum(t => t.Credit) * conversionRate;
+        cashOutflows = filteredTransactions.Sum(t => t.Debit) * conversionRate;
+
+        filteredDebts = Data.Debts
+            .Where(d => d.Date >= startDate && d.Date <= endDate && !d.IsCleared)
+            .ToList();
+
+        totalDebts = filteredDebts.Sum(d => d.Amount) * conversionRate;
+        clearedDebts = Data.Debts.Where(d => d.IsCleared).Sum(d => d.Amount) * conversionRate;
     }
 }

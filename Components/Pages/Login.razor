@@ -4,7 +4,7 @@
 @inject NavigationManager NavigationManager
 
 <div class="d-flex justify-content-center align-items-center" style="height: 100vh; background-color: #4a148c;">
-    <div class="card p-4 shadow" style="width: 400px;  background-color: white;">
+    <div class="card p-4 shadow" style="width: 400px; background-color: white;">
         <h3 class="text-center mb-4" style="font-weight: bold;">ExpenseTracker(m2)</h3>
         <div>
             <label for="username" class="form-label">Username:</label>
@@ -22,7 +22,12 @@
 
         @if (!string.IsNullOrEmpty(Message))
         {
-                <p class="text-danger text-center mt-3">@Message</p>
+            <p class="text-danger text-center mt-3">@Message</p>
+        }
+
+        @if (LoginSuccess)
+        {
+            <p class="text-success text-center mt-3">Login successful! Redirecting...</p>
         }
     </div>
 </div>
@@ -31,6 +36,7 @@
     private string LoginUsername = string.Empty;
     private string LoginPassword = string.Empty;
     private string Message = string.Empty;
+    private bool LoginSuccess = false;
 
     private void LoginPage()
     {
@@ -46,8 +52,11 @@
 
         if (isLoggedIn)
         {
-            // Redirect to the home page if login is successful
-            NavigationManager.NavigateTo("/");
+            // Set the success flag and show success message
+            LoginSuccess = true;
+
+            // Redirect to the home page after a short delay (for user to see the success message)
+            Task.Delay(2000).ContinueWith(t => NavigationManager.NavigateTo("/"));
         }
         else
         {

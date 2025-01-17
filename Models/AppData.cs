@@ -12,8 +12,11 @@ namespace m2.Models
 
         public List<User> Users { get; set; } = new();
         public List<Transaction> Transactions { get; set; } = new();
-        //public List<Debt> Debts { get; set; } = new();
         public List<Debt> Debts { get; set; } = new List<Debt>();
+
+        public string PreferredCurrency { get; set; }
+
+
 
     }
 

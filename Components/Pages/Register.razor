@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-center align-items-center" style="height: 100vh; background-color: #4a148c;">
     <div class="card shadow" style="width: 100%; max-width: 450px; border-color: #4a148c;">
-        <h3 class="text-center mt-8" style="color: #4a148c;">Register</h3>
+        <h3 class="text-center mt-4" style="font-weight: bold;">Register to M2</h3>
         <div class="card-body">
             <div class="form-group mb-3">
                 <label for="username" class="form-label" style="color: #4a148c;">Username</label>
@@ -88,7 +88,7 @@
         UserService.SaveUsers(Users);
 
         // Show success message
-        Message = "Registration successful. Redirecting to homepage...";
+        Message = "Registration successful. Redirecting to login page ^^...";
 
         // Wait for 2 seconds before redirecting to homepage
         await Task.Delay(2000);

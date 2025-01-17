@@ -7,7 +7,7 @@
 <!-- Display Total Transactions Info -->
 <div class="mb-4">
     <p><strong>Total Transactions:</strong> @Data.Transactions.Count</p>
-    <p><strong>Net Balance (Inflows + Debts - Outflows):</strong> @(Data.Transactions.Sum(t => t.Credit) + Data.Debts.Sum(d => d.Amount) - Data.Transactions.Sum(t => t.Debit))</p>
+    <p><strong>Net Balance (Inflows + Debts - Outflows):</strong> @(GetMainBalance())</p>
 </div>
 
 <!-- Search Input -->
@@ -68,27 +68,20 @@
     </thead>
     <tbody>
         @{
-            decimal runningBalance = Data.Transactions.Sum(t => t.Credit) - Data.Transactions.Sum(t => t.Debit); // Initial balance
+            decimal runningBalance = GetMainBalance(); // Start with the main balance
         }
         @foreach (var transaction in GetSortedAndFilteredTransactions())
         {
-            // Update running balance for the current transaction
+            // Update running balance based on the current transaction
             runningBalance += transaction.Credit - transaction.Debit;
 
             <tr>
                 <td>@transaction.Id</td>
                 <td>
-                    @if (runningBalance < 0)
-                    {
-                        <span class="text-danger">Pending Debt</span>
-                    }
-                    else
-                    {
-                        @runningBalance
-                    }
+                    @(runningBalance < 0 ? "Pending Debt" : runningBalance.ToString("0.00")) <!-- Show pending debt if balance is negative -->
                 </td>
-                <td>@Math.Max(0, transaction.Debit)</td>
-                <td>@Math.Max(0, transaction.Credit)</td>
+                <td>@transaction.Debit.ToString("0.00")</td>
+                <td>@transaction.Credit.ToString("0.00")</td>
                 <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
                 <td>@transaction.Description</td>
                 <td>
@@ -111,8 +104,6 @@
     </tbody>
 </table>
 
-
-
 @code {
     private AppData Data;
     private string searchQuery = string.Empty;
@@ -131,6 +122,15 @@
             .Select(tag => tag.Name)
             .Distinct()
             .ToList();
+    }
+
+    // Method to calculate the main balance
+    private decimal GetMainBalance()
+    {
+        var creditSum = Data.Transactions.Sum(t => t.Credit);
+        var debitSum = Data.Transactions.Sum(t => t.Debit);
+        var debtSum = Data.Debts.Where(d => !d.IsCleared).Sum(d => d.Amount);
+        return creditSum - debitSum + debtSum;
     }
 
     // Method to get transactions sorted and filtered
@@ -157,5 +157,4 @@
             return filteredTransactions.OrderByDescending(t => t.Date); // Descending order
         }
     }
-
 }

@@ -40,18 +40,49 @@
     }
 
     <div class="mt-5">
-        <h2>Manage Debts</h2>
-        <button class="btn btn-success" @onclick="ClearDebts">Clear Pending Debts</button>
-
         <h3 class="mt-4">Pending Debts</h3>
-        <ul class="list-group">
-            @foreach (var debt in Data.Debts.Where(d => !d.IsCleared))
-            {
-                <li class="list-group-item">
-                    <strong>@debt.Description</strong> - @debt.Amount:C - <em>@debt.Date.ToShortDateString()</em>
-                </li>
-            }
-        </ul>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var debt in Data.Debts)
+                    {
+                        <tr class="@(!debt.IsCleared ? "table-warning" : "table-success")">
+                            <td>
+                                <strong>@debt.Description</strong>
+                            </td>
+                            <td>@debt.Amount:USD</td>
+                            <td>@debt.Date.ToShortDateString()</td>
+                            <td>
+                                @if (!debt.IsCleared)
+                                {
+                                    <span class="badge bg-danger">Pending</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Cleared</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-success
+btn-lg w-50
+mt-3" @onclick="ClearDebts">
+            Clear Pending Debts
+        </button>
+
     </div>
 </div>
 
@@ -129,28 +160,30 @@
 
     private void ClearDebts()
     {
-        foreach (var debt in Data.Debts.Where(d => !d.IsCleared))
-        {
-            var availableInflows = Data.Transactions.Where(t => t.Credit > t.Debit).Sum(t => t.Credit - t.Debit);
+        decimal availableInflows = Data.Transactions.Sum(t => t.Credit - t.Debit); // Calculate current inflows
 
+        foreach (var debt in Data.Debts.Where(d => !d.IsCleared).ToList())
+        {
             if (availableInflows >= debt.Amount)
             {
                 // Fully clear the debt
                 debt.IsCleared = true;
+                availableInflows -= debt.Amount; // Deduct the debt amount from inflows
 
-                // Adjust transactions
+                // Add a clearing transaction
                 var clearingTransaction = new Transaction
-                {
-                    Id = Data.Transactions.Count + 1,
-                    Credit = -debt.Amount,
-                    Description = $"Cleared debt: {debt.Description}",
-                    Date = DateTime.Now
-                };
+                    {
+                        Id = Data.Transactions.Count + 1,
+                        Credit = debt.Amount, 
+                        Description = $"Cleared debt: {debt.Description}",
+                        Date = DateTime.Now
+                    };
                 Data.Transactions.Add(clearingTransaction);
             }
             else
             {
-                break; // Stop if inflows are insufficient to clear the next debt
+                // Stop processing if inflows are insufficient
+                break;
             }
         }
 
